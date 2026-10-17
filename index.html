@@ -3,149 +3,174 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My Diary</title>
+<title>일기</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap" rel="stylesheet">
 <style>
-  body { margin:0; background:#111; color:#ddd;
-         font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif; font-size:13px; line-height:1.8; }
-  #wrap { max-width:720px; margin:0 auto; padding:30px 20px; }
-  h1 { font-size:16px; text-align:center; letter-spacing:2px; margin-bottom:20px; }
-  a { color:#9ab; text-decoration:none; cursor:pointer; }
-  a:hover, a.on { color:#fff; text-decoration:underline; }
-  .nav { text-align:center; margin:8px 0; }
-  .nav a { margin:0 6px; }
-  hr { border:0; border-top:1px dotted #444; margin:20px 0; }
-  .entry { margin-bottom:28px; }
-  .date { color:#fff; font-weight:bold; border-bottom:1px solid #333; padding-bottom:4px; margin-bottom:8px; }
-  .body { white-space:pre-wrap; }
-  .empty { text-align:center; color:#666; }
-  footer { text-align:center; color:#555; font-size:11px; margin-top:40px; }
-  .tabs { text-align:center; margin-bottom:10px; }
-  .tabs a { margin:0 10px; font-weight:bold; }
-  #gb { display:none; }
-  #gb input, #gb textarea { width:100%; box-sizing:border-box; background:#1a1a1a; color:#ddd;
-    border:1px solid #444; padding:6px; margin-bottom:6px; font-family:inherit; font-size:13px; }
-  #gb button { background:#333; color:#fff; border:1px solid #555; padding:6px 16px; cursor:pointer; }
-  #gb button:hover { background:#555; }
-  .gb-item { border-bottom:1px dotted #444; padding:10px 0; }
-  .gb-meta { color:#888; font-size:11px; }
+  body { margin:0; background:#fff; color:#222;
+         font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif; font-size:15px; }
+  #top { width:1240px; max-width:100%; height:96px; border-bottom:2px solid #ddd; box-sizing:border-box; }
+  #top h1 { margin:0; padding:6px 20px; font-family:"Nanum Pen Script",cursive; font-size:48px;
+            font-weight:normal; color:#5a4630; line-height:1.2; }
+  #main { display:flex; width:1240px; max-width:100%; }
+  #left { flex:0 0 850px; max-width:65%; box-sizing:border-box; padding:0 0 0 18px; border-right:2px solid #ddd; }
+  #date { font-weight:bold; font-size:17px; margin:75px 0 28px; }
+  #text { height:720px; overflow-y:auto; white-space:pre-wrap; line-height:2.1; letter-spacing:1px;
+          padding-right:20px; word-spacing:3px; }
+  #text::-webkit-scrollbar { width:17px; }
+  #text::-webkit-scrollbar-thumb { background:#8a8a8a; border-radius:9px; border:3px solid #fff; }
+  #text::-webkit-scrollbar-track { background:#fafafa; }
+  #editor { display:none; }
+  #editor textarea { width:96%; height:640px; box-sizing:border-box; font:inherit; line-height:1.9;
+                     border:1px solid #ccc; padding:10px; resize:none; }
+  .btn { background:none; border:1px solid #aaa; padding:4px 14px; margin:8px 6px 0 0; cursor:pointer;
+         font:inherit; font-size:13px; color:#444; }
+  .btn:hover { background:#f2f2f2; }
+  #right { flex:1; text-align:center; padding-top:75px; min-width:260px; }
+  #ym { font-size:17px; margin-bottom:44px; letter-spacing:1px; }
+  table { margin:0 auto; border-collapse:collapse; }
+  th { font-weight:normal; padding:6px 7px; font-size:16px; }
+  th.sun { color:#d682d6; } th.sat { color:#5bb5b5; }
+  td { padding:11px 8px; text-align:center; font-size:16px; letter-spacing:1px; min-width:24px; }
+  td a { color:#333; cursor:pointer; text-decoration:none; }
+  td a.has { font-weight:bold; border-bottom:2px solid #5a4630; }
+  td a.sel { background:#5a4630; color:#fff; padding:3px 6px; border-radius:3px; border-bottom:0; }
+  #pn { margin:26px 0 22px; color:#999; font-size:16px; letter-spacing:1px; }
+  #pn a { cursor:pointer; color:#999; margin:0 18px; }
+  #pn a:hover { color:#333; }
+  select { font:inherit; font-size:15px; margin:0 14px; padding:1px 4px; }
+  #tools { margin-top:34px; }
 </style>
 </head>
 <body>
-<div id="wrap">
-  <h1>+++ MY DIARY +++</h1>
-  <div class="tabs">
-    <a onclick="showTab('diary')">DIARY</a>
-    <a onclick="showTab('gb')">GUESTBOOK</a>
+<div id="top"><h1>일기</h1></div>
+<div id="main">
+  <div id="left">
+    <div id="date"></div>
+    <div id="text"></div>
+    <div id="editor">
+      <textarea id="ta" placeholder="내용을 입력하세요"></textarea>
+      <button class="btn" onclick="save()">저장</button>
+      <button class="btn" onclick="cancelEdit()">취소</button>
+    </div>
   </div>
-
-  <div class="nav" id="years"></div>
-  <div class="nav" id="months"></div>
-  <hr>
-  <div id="list"></div>
-
-  <div id="gb">
-    <input id="gb-name" placeholder="이름" maxlength="20">
-    <textarea id="gb-msg" rows="4" placeholder="메시지를 남겨주세요" maxlength="500"></textarea>
-    <button onclick="addGb()">남기기</button>
-    <hr>
-    <div id="gb-list"></div>
+  <div id="right">
+    <div id="ym"></div>
+    <table id="cal"></table>
+    <div id="pn"><a onclick="moveMonth(-1)">이전달 &lt;&lt;</a><a onclick="moveMonth(1)">&gt;&gt; 다음달</a></div>
+    <select id="selY" onchange="jump()"></select>
+    <select id="selM" onchange="jump()"></select>
+    <div id="tools">
+      <button class="btn" onclick="startEdit()">글쓰기 / 수정</button>
+      <button class="btn" onclick="del()">삭제</button>
+    </div>
   </div>
-
-  <footer>© My Diary</footer>
 </div>
 
 <script>
-const GB_URL = "https://script.google.com/macros/s/AKfycbxvhg42m_Etoh92vhrBlIAE-aJNeXFPY3HGmKJ7rJuQbzCGPDvJz_ibPNdWqNddwY8e/exec";
+const API = "https://wlgh0952.github.io/journal/";
 
-const entries = [
-  { date: "2026-10-17", title: "첫 글", text: "여기에 내용을 쓰세요.\n줄바꿈도 그대로 표시됩니다." },
-  { date: "2026-09-02", title: "9월의 기록", text: "예시 글입니다." },
-  { date: "2025-12-25", title: "작년 크리스마스", text: "예시 글입니다." }
-];
+const pad = n => String(n).padStart(2, "0");
+const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+let data = {}, sel, cy, cm;
 
-const yearsEl = document.getElementById("years");
-const monthsEl = document.getElementById("months");
-const listEl = document.getElementById("list");
-const years = [...new Set(entries.map(e => e.date.slice(0,4)))].sort().reverse();
-let curYear = years[0];
-let curMonth = "all";
+async function load() {
+  try {
+    const a = await (await fetch(API)).json();
+    a.forEach(e => data[e.date] = e.text);
+  } catch (err) {}
+  const keys = Object.keys(data).sort();
+  const t = new Date();
+  sel = keys.length ? keys[keys.length - 1] : `${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())}`;
+  [cy, cm] = sel.split("-").map(Number);
+  initSelects();
+  render();
+}
 
-function esc(s){ return s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+function initSelects() {
+  const y = document.getElementById("selY"), m = document.getElementById("selM");
+  for (let i = 2000; i <= 2040; i++) y.innerHTML += `<option value="${i}">${i}년</option>`;
+  for (let i = 1; i <= 12; i++) m.innerHTML += `<option value="${i}">${i}월</option>`;
+}
 
 function render() {
-  yearsEl.innerHTML = years.map(y =>
-    `<a class="${y===curYear?'on':''}" onclick="setYear('${y}')">${y}년</a>`).join("");
-  let months = '<a class="' + (curMonth==="all"?"on":"") + '" onclick="setMonth(\'all\')">전체</a>';
-  for (let m = 1; m <= 12; m++) {
-    const mm = String(m).padStart(2,"0");
-    const has = entries.some(e => e.date.startsWith(curYear+"-"+mm));
-    months += has
-      ? `<a class="${curMonth===mm?'on':''}" onclick="setMonth('${mm}')">${m}월</a>`
-      : `<span style="color:#444;margin:0 6px">${m}월</span>`;
+  const [y, m, d] = sel.split("-").map(Number);
+  document.getElementById("date").textContent = `${y}년 ${m}월 ${d}일`;
+  document.getElementById("text").innerHTML =
+    data[sel] ? esc(data[sel]) : '<span style="color:#aaa">이 날의 글이 없습니다.</span>';
+  document.getElementById("text").scrollTop = 0;
+
+  document.getElementById("ym").textContent = `${cy}년 \u00A0 ${cm}월`;
+  document.getElementById("selY").value = cy;
+  document.getElementById("selM").value = cm;
+
+  const first = new Date(cy, cm - 1, 1).getDay();
+  const last = new Date(cy, cm, 0).getDate();
+  let h = '<tr><th class="sun">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="sat">土</th></tr><tr>';
+  for (let i = 0; i < first; i++) h += "<td></td>";
+  for (let day = 1; day <= last; day++) {
+    const key = `${cy}-${pad(cm)}-${pad(day)}`;
+    const cls = (data[key] ? "has " : "") + (key === sel ? "sel" : "");
+    h += `<td><a class="${cls}" onclick="pick('${key}')">${day}</a></td>`;
+    if ((first + day) % 7 === 0 && day < last) h += "</tr><tr>";
   }
-  monthsEl.innerHTML = months;
-  const prefix = curMonth === "all" ? curYear : curYear + "-" + curMonth;
-  const shown = entries.filter(e => e.date.startsWith(prefix))
-                       .sort((a,b) => b.date.localeCompare(a.date));
-  listEl.innerHTML = shown.length
-    ? shown.map(e => `
-        <div class="entry">
-          <div class="date">${e.date.replaceAll("-",".")} &nbsp; ${esc(e.title)}</div>
-          <div class="body">${esc(e.text)}</div>
-        </div>`).join("")
-    : '<div class="empty">작성된 글이 없습니다.</div>';
-}
-function setYear(y){ curYear = y; curMonth = "all"; render(); }
-function setMonth(m){ curMonth = m; render(); }
-render();
-
-const navs = document.querySelectorAll(".nav");
-const hrs = document.querySelectorAll("#wrap > hr");
-function showTab(t) {
-  const isGb = t === "gb";
-  document.getElementById("gb").style.display = isGb ? "block" : "none";
-  navs.forEach(n => n.style.display = isGb ? "none" : "block");
-  listEl.style.display = isGb ? "none" : "block";
-  hrs.forEach(h => h.style.display = isGb ? "none" : "block");
-  if (isGb) renderGb();
+  document.getElementById("cal").innerHTML = h + "</tr>";
 }
 
-async function renderGb() {
-  const box = document.getElementById("gb-list");
-  box.innerHTML = '<div class="empty">불러오는 중...</div>';
+function pick(k) { cancelEdit(); sel = k; render(); }
+function moveMonth(n) {
+  cm += n;
+  if (cm < 1) { cm = 12; cy--; } else if (cm > 12) { cm = 1; cy++; }
+  render();
+}
+function jump() {
+  cy = +document.getElementById("selY").value;
+  cm = +document.getElementById("selM").value;
+  render();
+}
+
+function getPw() {
+  let pw = sessionStorage.getItem("pw");
+  if (!pw) { pw = prompt("비밀번호를 입력하세요"); if (pw) sessionStorage.setItem("pw", pw); }
+  return pw;
+}
+function startEdit() {
+  if (!getPw()) return;
+  document.getElementById("text").style.display = "none";
+  document.getElementById("editor").style.display = "block";
+  document.getElementById("ta").value = data[sel] || "";
+  document.getElementById("ta").focus();
+}
+function cancelEdit() {
+  document.getElementById("editor").style.display = "none";
+  document.getElementById("text").style.display = "block";
+}
+async function send(payload) {
+  const res = await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  });
+  const r = await res.text();
+  if (r === "pw") { sessionStorage.removeItem("pw"); alert("비밀번호가 틀렸습니다."); return false; }
+  return true;
+}
+async function save() {
+  const text = document.getElementById("ta").value;
+  if (!text.trim()) return alert("내용을 입력해주세요.");
   try {
-    const a = await (await fetch(GB_URL)).json();
-    box.innerHTML = a.length
-      ? a.map(e => `
-          <div class="gb-item">
-            <div class="gb-meta"><b style="color:#fff">${esc(String(e.name))}</b> · ${esc(String(e.time))}</div>
-            <div class="body">${esc(String(e.msg))}</div>
-          </div>`).join("")
-      : '<div class="empty">아직 방명록이 비어 있어요.</div>';
-  } catch (err) {
-    box.innerHTML = '<div class="empty">불러오지 못했습니다.</div>';
-  }
+    if (await send({ action: "save", pw: getPw(), date: sel, text })) {
+      data[sel] = text; cancelEdit(); render();
+    }
+  } catch (err) { alert("저장에 실패했습니다."); }
+}
+async function del() {
+  if (!data[sel] || !getPw() || !confirm("이 날의 글을 삭제할까요?")) return;
+  try {
+    if (await send({ action: "delete", pw: getPw(), date: sel })) { delete data[sel]; render(); }
+  } catch (err) { alert("삭제에 실패했습니다."); }
 }
 
-async function addGb() {
-  const name = document.getElementById("gb-name").value.trim() || "익명";
-  const msg = document.getElementById("gb-msg").value.trim();
-  if (!msg) return alert("메시지를 입력해주세요.");
-  const btn = document.querySelector("#gb button");
-  btn.disabled = true;
-  try {
-    await fetch(GB_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ name, msg })
-    });
-    document.getElementById("gb-msg").value = "";
-    await renderGb();
-  } catch (err) {
-    alert("전송에 실패했습니다.");
-  }
-  btn.disabled = false;
-}
+load();
 </script>
 </body>
 </html>
