@@ -12,7 +12,7 @@
   #top h1 { margin:0; padding:6px 20px; font-family:"Nanum Pen Script",cursive; font-size:48px;
             font-weight:normal; color:#5a4630; line-height:1.2; }
   #main { display:flex; width:1240px; max-width:100%; margin:0 auto; }
-  #left { flex:0 0 850px; max-width:65%; box-sizing:border-box; padding:0 0 0 18px; border-right:2px solid #ddd; }
+  #left { flex:0 0 850px; max-width:65%; box-sizing:border-box; padding:0 0 0 18px; borFder-right:2px solid #ddd; }
   #date { font-weight:bold; font-size:17px; margin:75px 0 28px; }
   #text { height:720px; overflow-y:auto; white-space:pre-wrap; line-height:2.1; letter-spacing:1px;
           padding-right:20px; word-spacing:3px; }
@@ -134,8 +134,12 @@ function getPw() {
   if (!pw) { pw = prompt("비밀번호를 입력하세요"); if (pw) sessionStorage.setItem("pw", pw); }
   return pw;
 }
-function startEdit() {
-  if (!getPw()) return;
+async function startEdit() {
+  const pw = getPw();
+  if (!pw) return;
+  try {
+    if (!(await send({ action: "check", pw }))) return;
+  } catch (err) { return alert("서버에 연결하지 못했습니다."); }
   document.getElementById("text").style.display = "none";
   document.getElementById("editor").style.display = "block";
   document.getElementById("ta").value = data[sel] || "";
