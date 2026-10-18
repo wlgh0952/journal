@@ -87,19 +87,6 @@ const pad = n => String(n).padStart(2, "0");
 const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let data = {}, sel, cy, cm;
 
-async function load() {
-  try {
-    const a = await (await fetch(API)).json();
-    a.forEach(e => data[e.date] = e.text);
-  } catch (err) {}
-  const keys = Object.keys(data).sort();
-  const t = new Date();
-  sel = keys.length ? keys[keys.length - 1] : `${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())}`;
-  [cy, cm] = sel.split("-").map(Number);
-  initSelects();
-  render();
-}
-
 function initSelects() {
   const y = document.getElementById("selY"), m = document.getElementById("selM");
   for (let i = 2000; i <= 2040; i++) y.innerHTML += `<option value="${i}">${i}년</option>`;
@@ -142,11 +129,9 @@ function jump() {
   render();
 }
 
-function getPw() {
-  let pw = sessionStorage.getItem("pw");
-  if (!pw) { pw = prompt("비밀번호를 입력하세요"); if (pw) sessionStorage.setItem("pw", pw); }
-  return pw;
+function getPw() { return sessionStorage.getItem("pw");
 }
+  
 async function startEdit() {
   const pw = getPw();
   if (!pw) return;
@@ -188,7 +173,31 @@ async function del() {
   } catch (err) { alert("삭제에 실패했습니다."); }
 }
 
-load();
+async function unlock() {
+  const pw = document.getElementById("gpw").value.trim();
+  const msg = document.getElementById("gmsg");
+  if (!pw) return;
+  msg.textContent = "확인 중...";
+  try {
+    const t = await (await fetch(API + "?pw=" + encodeURIComponent(pw))).text();
+    if (t === "pw") { sessionStorage.removeItem("pw"); msg.textContent = "틀렸습니다."; return; }
+    sessionStorage.setItem("pw", pw);
+    JSON.parse(t).forEach(e => data[e.date] = e.text);
+    document.getElementById("gate").style.display = "none";
+    start();
+  } catch (err) { msg.textContent = "연결하지 못했습니다."; }
+}
+
+function start() {
+  const t = new Date();
+  cy = t.getFullYear(); cm = t.getMonth() + 1;
+  sel = `${cy}-${pad(cm)}-${pad(t.getDate())}`;
+  initSelects();
+  render();
+}
+
+const saved = sessionStorage.getItem("pw");
+if (saved) { document.getElementById("gpw").value = saved; unlock(); }
 </script>
 </body>
 </html>
