@@ -40,9 +40,22 @@
   select { font:inherit; font-size:15px; margin:0 14px; padding:1px 4px; }
   #tools { margin-top:34px; }
   #top h1 .sub { font-family:"Nanum Pen Script",cursive; font-size:26px; color:#9a8870; margin-left:8px; letter-spacing:1px; }
+  #gate { position:fixed; inset:0; background:#fff; z-index:99; display:flex; align-items:center; justify-content:center; }
+  #gate .box { text-align:center; }
+  #gate .gt { font-family:"Nanum Pen Script",cursive; font-size:56px; color:#5a4630; margin-bottom:20px; }
+  #gate input { font:inherit; padding:8px 12px; border:1px solid #bbb; width:200px; text-align:center; letter-spacing:3px; }
+  #gmsg { color:#c55; margin-top:12px; min-height:20px; font-size:14px; }
 </style>
 </head>
 <body>
+  <div id="gate">
+  <div class="box">
+    <div class="gt">일기</div>
+    <input id="gpw" type="password" placeholder="생일을 입력하세요" onkeydown="if(event.key==='Enter')unlock()">
+    <button class="btn" onclick="unlock()">입장</button>
+    <div id="gmsg"></div>
+  </div>
+</div>
 <div id="top"><h1>일기 <span class="sub">journaling</span></h1></div>
 <div id="main">
   <div id="left">
