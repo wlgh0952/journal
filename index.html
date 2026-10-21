@@ -180,7 +180,7 @@ async function unlock() {
   msg.textContent = "확인 중...";
   try {
     const t = await (await fetch(API + "?pw=" + encodeURIComponent(pw))).text();
-    if (t === "pw") { sessionStorage.removeItem("pw"); msg.textContent = "틀렸습니다."; return; }
+    if (t === "pw") { sessionStorage.removeItem("pw"); msg.textContent = "땡! 틀렸습니다."; return; }
     sessionStorage.setItem("pw", pw);
     JSON.parse(t).forEach(e => data[e.date] = e.text);
     document.getElementById("gate").style.display = "none";
