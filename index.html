@@ -3,16 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>일기 (Journal)</title>
+<title>일기</title>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap" rel="stylesheet">
 <style>
-  body { margin:0; background:#fff; color:#222; zoom:0.85;
+  body { margin:0; background:#fff; color:#222;
          font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif; font-size:15px; }
-  #top { width:1240px; max-width:100%; height:96px; border-bottom:2px solid #ddd; box-sizing:border-box; margin:0 auto; }
+  #top { width:1240px; max-width:100%; height:96px; border-bottom:2px solid #ddd; box-sizing:border-box; }
   #top h1 { margin:0; padding:6px 20px; font-family:"Nanum Pen Script",cursive; font-size:48px;
             font-weight:normal; color:#5a4630; line-height:1.2; }
-  #main { display:flex; width:1240px; max-width:100%; margin:0 auto; }
-  #left { flex:0 0 850px; max-width:65%; box-sizing:border-box; padding:0 0 0 18px; border-right:2px solid #999; min-height:900px; }
+  #main { display:flex; width:1240px; max-width:100%; }
+  #left { flex:0 0 850px; max-width:65%; box-sizing:border-box; padding:0 0 0 18px;
+          border-right:2px solid #999; min-height:900px; }
   #date { font-weight:bold; font-size:17px; margin:75px 0 28px; }
   #text { height:720px; overflow-y:auto; white-space:pre-wrap; line-height:2.1; letter-spacing:1px;
           padding-right:20px; word-spacing:3px; }
@@ -33,13 +34,15 @@
   td { padding:11px 8px; text-align:center; font-size:16px; letter-spacing:1px; min-width:24px; }
   td a { color:#333; cursor:pointer; text-decoration:none; }
   td a.has { font-weight:bold; border-bottom:2px solid #5a4630; }
+  td a.sun { color:#d682d6; }
+  td a.sat { color:#5bb5b5; }
+  td a.hol { color:#e03131; }
   td a.sel { background:#5a4630; color:#fff; padding:3px 6px; border-radius:3px; border-bottom:0; }
   #pn { margin:26px 0 22px; color:#999; font-size:16px; letter-spacing:1px; }
   #pn a { cursor:pointer; color:#999; margin:0 18px; }
   #pn a:hover { color:#333; }
   select { font:inherit; font-size:15px; margin:0 14px; padding:1px 4px; }
   #tools { margin-top:34px; }
-  #top h1 .sub { font-family:"Nanum Pen Script",cursive; font-size:26px; color:#9a8870; margin-left:8px; letter-spacing:1px; }
   #gate { position:fixed; inset:0; background:#fff; z-index:99; display:flex; align-items:center; justify-content:center; }
   #gate .box { text-align:center; }
   #gate .gt { font-family:"Nanum Pen Script",cursive; font-size:56px; color:#5a4630; margin-bottom:20px; }
@@ -48,15 +51,16 @@
 </style>
 </head>
 <body>
-  <div id="gate">
+<div id="gate">
   <div class="box">
     <div class="gt">일기</div>
-    <input id="gpw" type="password" inputmode="numeric" maxlength="4" placeholder="Birthday(mmdd)" onkeydown="if(event.key==='Enter')unlock()">
+    <input id="gpw" type="password" inputmode="numeric" maxlength="4" placeholder="birthday (mmdd)" onkeydown="if(event.key==='Enter')unlock()">
     <button class="btn" onclick="unlock()">입장</button>
     <div id="gmsg"></div>
   </div>
 </div>
-<div id="top"><h1>일기 <span class="sub">journaling</span></h1></div>
+
+<div id="top"><h1>일기</h1></div>
 <div id="main">
   <div id="left">
     <div id="date"></div>
@@ -87,6 +91,22 @@ const pad = n => String(n).padStart(2, "0");
 const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let data = {}, sel, cy, cm;
 
+const FIXED_HOL = ["01-01","06-19","07-04","11-11","12-25"];
+const HOL = new Set();
+const loadedYears = new Set();
+const isHoliday = k => HOL.has(k) || FIXED_HOL.includes(k.slice(5));
+
+async function ensureHol(y) {
+  if (loadedYears.has(y)) return false;
+  try {
+    const arr = await (await fetch(API + "?action=hol&year=" + y)).json();
+    arr.forEach(d => HOL.add(d));
+    loadedYears.add(y);
+    return true;
+  } catch (err) { return false; }
+}
+function go() { render(); ensureHol(cy).then(ok => { if (ok) render(); }); }
+
 function initSelects() {
   const y = document.getElementById("selY"), m = document.getElementById("selM");
   for (let i = 2000; i <= 2040; i++) y.innerHTML += `<option value="${i}">${i}년</option>`;
@@ -110,7 +130,9 @@ function render() {
   for (let i = 0; i < first; i++) h += "<td></td>";
   for (let day = 1; day <= last; day++) {
     const key = `${cy}-${pad(cm)}-${pad(day)}`;
-    const cls = (data[key] ? "has " : "") + (key === sel ? "sel" : "");
+    const dow = (first + day - 1) % 7;
+    const cls = (data[key] ? "has " : "") + (key === sel ? "sel " : "")
+              + (dow === 0 ? "sun " : dow === 6 ? "sat " : "") + (isHoliday(key) ? "hol" : "");
     h += `<td><a class="${cls}" onclick="pick('${key}')">${day}</a></td>`;
     if ((first + day) % 7 === 0 && day < last) h += "</tr><tr>";
   }
@@ -121,17 +143,16 @@ function pick(k) { cancelEdit(); sel = k; render(); }
 function moveMonth(n) {
   cm += n;
   if (cm < 1) { cm = 12; cy--; } else if (cm > 12) { cm = 1; cy++; }
-  render();
+  go();
 }
 function jump() {
   cy = +document.getElementById("selY").value;
   cm = +document.getElementById("selM").value;
-  render();
+  go();
 }
 
-function getPw() { return sessionStorage.getItem("pw");
-}
-  
+function getPw() { return sessionStorage.getItem("pw"); }
+
 async function startEdit() {
   const pw = getPw();
   if (!pw) return;
@@ -154,7 +175,7 @@ async function send(payload) {
     body: JSON.stringify(payload)
   });
   const r = await res.text();
-  if (r === "pw") { sessionStorage.removeItem("pw"); alert("비밀번호가 틀렸습니다."); return false; }
+  if (r === "pw") { sessionStorage.removeItem("pw"); alert("비밀번호가 틀렸습니다. 새로고침 후 다시 입장해주세요."); return false; }
   return true;
 }
 async function save() {
@@ -164,7 +185,7 @@ async function save() {
     if (await send({ action: "save", pw: getPw(), date: sel, text })) {
       data[sel] = text; cancelEdit(); render();
     }
-  } catch (err) { alert("저장에 실패했습니다."); }
+  } catch (err) { alert("저장에 실패했습니다.\n" + err); }
 }
 async function del() {
   if (!data[sel] || !getPw() || !confirm("이 날의 글을 삭제할까요?")) return;
@@ -180,7 +201,7 @@ async function unlock() {
   msg.textContent = "확인 중...";
   try {
     const t = await (await fetch(API + "?pw=" + encodeURIComponent(pw))).text();
-    if (t === "pw") { sessionStorage.removeItem("pw"); msg.textContent = "땡! 틀렸습니다."; return; }
+    if (t === "pw") { sessionStorage.removeItem("pw"); msg.textContent = "틀렸습니다."; return; }
     sessionStorage.setItem("pw", pw);
     JSON.parse(t).forEach(e => data[e.date] = e.text);
     document.getElementById("gate").style.display = "none";
@@ -193,7 +214,7 @@ function start() {
   cy = t.getFullYear(); cm = t.getMonth() + 1;
   sel = `${cy}-${pad(cm)}-${pad(t.getDate())}`;
   initSelects();
-  render();
+  go();
 }
 
 const saved = sessionStorage.getItem("pw");
