@@ -8,9 +8,11 @@
 <style>
   body { margin:0; background:#fff; color:#222;
          font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif; font-size:15px; }
-  #top { width:1240px; max-width:100%; height:96px; border-bottom:2px solid #ddd; box-sizing:border-box; margin:0 auto; }
-  #top h1 { margin:0; padding:6px 20px; font-family:"Nanum Pen Script",cursive; font-size:48px;
+  #top { width:1240px; max-width:100%; height:96px; border-bottom:2px solid #999; box-sizing:border-box; margin:0 auto;
+         display:flex; justify-content:space-between; align-items:flex-start; }
+  #top h1, #top .hello { margin:0; padding:24px 20px 0; font-family:"Nanum Pen Script",cursive; font-size:48px;
             font-weight:normal; color:#5a4630; line-height:1.2; }
+  #top h1 .sub { font-family:"Nanum Pen Script",cursive; font-size:22px; color:#999; letter-spacing:2px; margin-left:4px; }
   #main { display:flex; width:1240px; max-width:100%; margin:0 auto; }
   #left { flex:0 0 850px; max-width:65%; box-sizing:border-box; padding:0 0 0 18px;
           border-right:2px solid #999; min-height:900px; }
@@ -48,7 +50,6 @@
   #gate .gt { font-family:"Nanum Pen Script",cursive; font-size:56px; color:#5a4630; margin-bottom:20px; }
   #gate input { font:inherit; padding:8px 12px; border:1px solid #bbb; width:200px; text-align:center; letter-spacing:3px; }
   #gmsg { color:#c55; margin-top:12px; min-height:20px; font-size:14px; }
-  #top h1 .sub { font-family:"Nanum Pen Script",cursive; font-size:22px; color:#999; letter-spacing:2px; margin-left:4px; }
 </style>
 </head>
 <body>
@@ -61,7 +62,10 @@
   </div>
 </div>
 
-<div id="top"><h1>일기 <span class="sub"> Journaling</span></h1></div>
+<div id="top">
+  <h1>일기 <span class="sub"> Journaling</span></h1>
+  <div class="hello">안녕하세요</div>
+</div>
 <div id="main">
   <div id="left">
     <div id="date"></div>
@@ -91,6 +95,7 @@ const API = "https://script.google.com/macros/s/AKfycbxvhg42m_Etoh92vhrBlIAE-aJN
 const pad = n => String(n).padStart(2, "0");
 const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let data = {}, sel, cy, cm;
+let editPw = null;
 
 const FIXED_HOL = ["01-01","06-19","07-04","11-11","12-25"];
 const HOL = new Set();
@@ -152,23 +157,6 @@ function jump() {
   go();
 }
 
-function getPw() { return sessionStorage.getItem("pw"); }
-
-async function startEdit() {
-  const pw = getPw();
-  if (!pw) return;
-  try {
-    if (!(await send({ action: "check", pw }))) return;
-  } catch (err) { return alert("서버에 연결하지 못했습니다."); }
-  document.getElementById("text").style.display = "none";
-  document.getElementById("editor").style.display = "block";
-  document.getElementById("ta").value = data[sel] || "";
-  document.getElementById("ta").focus();
-}
-function cancelEdit() {
-  document.getElementById("editor").style.display = "none";
-  document.getElementById("text").style.display = "block";
-}
 async function send(payload) {
   const res = await fetch(API, {
     method: "POST",
@@ -176,22 +164,48 @@ async function send(payload) {
     body: JSON.stringify(payload)
   });
   const r = await res.text();
-  if (r === "pw") { sessionStorage.removeItem("pw"); alert("비밀번호가 틀렸습니다. 새로고침 후 다시 입장해주세요."); return false; }
+  if (r === "pw") { alert("비밀번호가 틀렸습니다."); return false; }
   return true;
+}
+
+async function askPw() {
+  const pw = prompt("관리자 비밀번호를 입력하세요");
+  if (!pw) return null;
+  try {
+    return (await send({ action: "check", pw: pw.trim() })) ? pw.trim() : null;
+  } catch (err) { alert("서버에 연결하지 못했습니다."); return null; }
+}
+
+async function startEdit() {
+  const pw = await askPw();
+  if (!pw) return;
+  editPw = pw;
+  document.getElementById("text").style.display = "none";
+  document.getElementById("editor").style.display = "block";
+  document.getElementById("ta").value = data[sel] || "";
+  document.getElementById("ta").focus();
+}
+function cancelEdit() {
+  editPw = null;
+  document.getElementById("editor").style.display = "none";
+  document.getElementById("text").style.display = "block";
 }
 async function save() {
   const text = document.getElementById("ta").value;
   if (!text.trim()) return alert("내용을 입력해주세요.");
   try {
-    if (await send({ action: "save", pw: getPw(), date: sel, text })) {
+    if (await send({ action: "save", pw: editPw, date: sel, text })) {
       data[sel] = text; cancelEdit(); render();
     }
   } catch (err) { alert("저장에 실패했습니다.\n" + err); }
 }
 async function del() {
-  if (!data[sel] || !getPw() || !confirm("이 날의 글을 삭제할까요?")) return;
+  if (!data[sel]) return alert("삭제할 글이 없습니다.");
+  const pw = await askPw();
+  if (!pw) return;
+  if (!confirm("이 날의 글을 삭제할까요?")) return;
   try {
-    if (await send({ action: "delete", pw: getPw(), date: sel })) { delete data[sel]; render(); }
+    if (await send({ action: "delete", pw, date: sel })) { delete data[sel]; render(); }
   } catch (err) { alert("삭제에 실패했습니다."); }
 }
 
