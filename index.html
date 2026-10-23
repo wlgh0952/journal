@@ -62,6 +62,10 @@
   </div>
 </div>
 
+##음악## 
+<div id="yt" style="position:fixed;left:-9999px;top:0;width:200px;height:200px"></div>
+<button id="music" class="btn" style="position:fixed;right:12px;bottom:12px;display:none" onclick="toggleMusic()">🎵 음악 끄기</button>
+
 <div id="top">
   <h1>일기 <span class="sub"> Journaling</span></h1>
   <div class="hello">안녕하세요</div>
@@ -220,6 +224,7 @@ async function unlock() {
     sessionStorage.setItem("pw", pw);
     JSON.parse(t).forEach(e => data[e.date] = e.text);
     document.getElementById("gate").style.display = "none";
+    startMusic();
     start();
   } catch (err) { msg.textContent = "연결하지 못했습니다."; }
 }
@@ -232,6 +237,30 @@ function start() {
   go();
 }
 
+let player, playing = false;
+const s = document.createElement("script");
+s.src = "https://www.youtube.com/iframe_api";
+document.head.appendChild(s);
+function onYouTubeIframeAPIReady() {
+  player = new YT.Player("yt", {
+    width: 200, height: 200, videoId: "3iHBlNgjQQo",
+    playerVars: { loop: 1, playlist: "3iHBlNgjQQo" }
+  });
+}
+function startMusic() {
+  if (!player || !player.playVideo) return;
+  player.setVolume(40);
+  player.playVideo();
+  playing = true;
+  const b = document.getElementById("music");
+  b.style.display = "block"; b.textContent = "🎵 음악 끄기";
+}
+function toggleMusic() {
+  const b = document.getElementById("music");
+  if (playing) { player.pauseVideo(); playing = false; b.textContent = "🎵 음악 켜기"; }
+  else { player.playVideo(); playing = true; b.textContent = "🎵 음악 끄기"; }
+}
+  
 const saved = sessionStorage.getItem("pw");
 if (saved) { document.getElementById("gpw").value = saved; unlock(); }
 </script>
